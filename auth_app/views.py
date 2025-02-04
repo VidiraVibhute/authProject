@@ -1,40 +1,33 @@
-from django.shortcuts import render, redirect
+from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login, logout
+from django.views.generic import CreateView, TemplateView
+from django.shortcuts import render, redirect
+from django.urls import reverse_lazy
 
-# Create your views here.
+class RegisterView(CreateView):
+    template_name = 'registration.html'  
+    form_class = UserCreationForm  
+    success_url = reverse_lazy('login')  
 
-def register(request):
-    if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect('login')
-        
-    else:
-        initial_data = {'username':'', 'password1':'', 'password2':''}
-        form = UserCreationForm(initial=initial_data)
-    return render(request, 'registration.html', {'form':form})
+    def form_valid(self, form):
+        user = form.save()
+        login(self.request, user)  
+        return redirect(self.success_url)
 
 
-def loginview(request):
-    if request.method == 'POST':
-        form = AuthenticationForm(request,data = request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            return redirect('dashboard')
-        
-    else:
-        initial_data = {'username':'', 'password':''}
-        form = AuthenticationForm(initial=initial_data)
-    return render(request, 'login.html', {'form':form})
+class CustomLoginView(LoginView):
+    template_name = 'login.html'
+    authentication_form = AuthenticationForm  
+
+    def get_success_url(self):
+        return reverse_lazy('dashboard')  
 
 
-def dashboard(request):
-    return render(request, 'dashboard.html')
+class DashboardView(TemplateView):
+    template_name = 'dashboard.html' 
 
-def logoutview(request):
+
+def custom_logout_view(request):
     logout(request)
     return redirect('login')
